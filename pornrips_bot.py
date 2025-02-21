@@ -90,17 +90,21 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = " ".join(context.args)
     if query:
         scraper = PornripsScraper()
-        result = scraper.search(query)
+        results = scraper.search(query)
 
-        if result:
-            title = result['name']
-            content = f"Size: {result.get('size', 'Unknown')}\nLink: {result.get('link', 'No link available')}"
-            page_url = create_telegraph_page(title, content)
-            await update.message.reply_text(f"Here is your result: {page_url}")
+        if results:
+            # Format all the results as a string
+            formatted_results = ""
+            for result in results:
+                formatted_results += f"Title: {result['name']}\nSize: {result.get('size', 'Unknown')}\nLink: {result.get('link', 'No link available')}\n\n"
+            
+            page_url = create_telegraph_page(query, formatted_results)
+            await update.message.reply_text(f"Here are your results: {page_url}")
         else:
             await update.message.reply_text('No results found.')
     else:
         await update.message.reply_text('Please provide a search term.')
+
 
 def main() -> None:
     application = Application.builder().token('7933218460:AAFbOiu04bmACRQh43eh7VfazGesw01T0-Y').build()
