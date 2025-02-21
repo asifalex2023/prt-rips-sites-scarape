@@ -12,7 +12,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def test(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("The bot is working!")
     
+telegraph = Telegraph()
+telegraph.create_account(short_name='PornripsBot')
 
+response = telegraph.create_page(
+    title='Test Page',
+    html_content="<p>This is a test content</p>"
+)
+
+print(f"Created page: https://telegra.ph/{response['path']}")
 
 # Create a class for your scraper
 class PornripsScraper:
@@ -106,16 +114,18 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     print("Received /search command")  # Debugging line
     query = " ".join(context.args)
     if query:
+        print(f"Searching for: {query}")  # Debugging line
         scraper = PornripsScraper()
         results = scraper.search(query)
+        print(f"Found {len(results)} results")  # Debugging line
 
         if results:
-            print(f"Found {len(results)} results")  # Debugging line
             formatted_results = ""
             for result in results:
                 formatted_results += f"Title: {result['name']}\nSize: {result.get('size', 'Unknown')}\nLink: {result.get('link', 'No link available')}\n\n"
             
             page_url = create_telegraph_page(query, formatted_results)
+            print(f"Generated page URL: {page_url}")  # Debugging line
             await update.message.reply_text(f"Here are your results: {page_url}")
         else:
             await update.message.reply_text('No results found.')
