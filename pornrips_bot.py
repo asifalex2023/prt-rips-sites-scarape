@@ -1,7 +1,7 @@
 import re
 import telebot
 from html.parser import HTMLParser
-from telegraph import telegraph
+import telegraph
 import requests
 from telegram import Bot
 from telegram.ext import Updater, CommandHandler
@@ -83,6 +83,7 @@ def create_telegraph_page(data):
     content = title + link + size
     page = t.create_page(title=data['name'], html_content=content)
     return page['url']
+
 
 # Handle the search command from Telegram users
 @bot.message_handler(commands=['search'])
