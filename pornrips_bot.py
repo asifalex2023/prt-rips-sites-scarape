@@ -1,9 +1,10 @@
 import re
 import requests
 from html.parser import HTMLParser
-from telegraph import Telegraph
-from telegram import Bot
-from telegram.ext import CommandHandler, Updater
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.ext import CommandHandler
+from telegram.ext import Application
 
 # Create a class for your scraper
 class PornripsScraper:
@@ -80,10 +81,16 @@ def create_telegraph_page(title, content):
     return f'https://telegra.ph/{response["path"]}'
 
 # Telegram Bot Command Handler
-def start(update, context):
-    update.message.reply_text('Welcome to Pornrips Scraper Bot! Type a search term.')
 
-def search(update, context):
+
+# Start command handler
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text('Welcome to Pornrips Scraper Bot! Type a search term.')
+
+async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = " ".join(context.args)
     if query:
         scraper = PornripsScraper()
@@ -93,22 +100,19 @@ def search(update, context):
             title = result['name']
             content = f"Size: {result.get('size', 'Unknown')}\nLink: {result.get('link', 'No link available')}"
             page_url = create_telegraph_page(title, content)
-            update.message.reply_text(f"Here is your result: {page_url}")
+            await update.message.reply_text(f"Here is your result: {page_url}")
         else:
-            update.message.reply_text('No results found.')
+            await update.message.reply_text('No results found.')
     else:
-        update.message.reply_text('Please provide a search term.')
+        await update.message.reply_text('Please provide a search term.')
 
-# Setup your Telegram Bot with the token you get from BotFather
-def main():
-    updater = Updater('7933218460:AAFbOiu04bmACRQh43eh7VfazGesw01T0-Y', use_context=True)
-    dp = updater.dispatcher
+def main() -> None:
+    application = Application.builder().token('YOUR_TELEGRAM_BOT_TOKEN').build()
 
-    dp.add_handler(CommandHandler('start', start))
-    dp.add_handler(CommandHandler('search', search))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("search", search))
 
-    updater.start_polling()
-    updater.idle()
+    application.run_polling()
 
 if __name__ == '__main__':
     main()
