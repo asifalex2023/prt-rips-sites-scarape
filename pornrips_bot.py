@@ -139,31 +139,29 @@ async def extract_links(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             await update.message.reply_text('❌ Could not fetch Telegraph page')
             return
 
-        # Extract all links from content
+        # Extract text from pre tags and find all torrent links
         torrent_links = []
         for item in data['result']['content']:
-            if item['tag'] == 'a' and item.get('attrs', {}).get('href', '').endswith('.torrent'):
-                torrent_links.append(item['attrs']['href'])
-            elif item['tag'] == 'p':
-                for child in item.get('children', []):
-                    if isinstance(child, dict) and child.get('tag') == 'a':
-                        href = child.get('attrs', {}).get('href', '')
-                        if href.endswith('.torrent'):
-                            torrent_links.append(href)
+            if item['tag'] == 'pre':
+                text_content = ''.join([child for child in item.get('children', []) if isinstance(child, str)])
+                # Find all .torrent URLs in text
+                links = re.findall(r'https?://[^\s<>"]+\.torrent', text_content)
+                torrent_links.extend(links)
 
         if not torrent_links:
             await update.message.reply_text('❌ No torrent links found in this page')
             return
 
-        # Create text file with proper encoding
-        text_content = '\n'.join(torrent_links)
+        # Create text file with unique links
+        unique_links = list(set(torrent_links))  # Remove duplicates
+        text_content = '\n'.join(unique_links)
         bio = io.BytesIO(text_content.encode('utf-8'))
         bio.seek(0)
         bio.name = 'torrent_links.txt'
 
         await update.message.reply_document(
             document=bio,
-            caption=f"✅ Found {len(torrent_links)} torrent links:",
+            caption=f"✅ Found {len(unique_links)} torrent links:",
             filename='torrent_links.txt'
         )
 
