@@ -75,7 +75,6 @@ class PornripsScraper:
             all_results.extend(parser.articles_data)
             page += 1
 
-            # Safety break to prevent infinite loops
             if page > 5:
                 break
         
@@ -89,6 +88,10 @@ def create_telegraph_page(title, content):
         html_content=f"<p>{content}</p>"
     )
     return f'https://telegra.ph/{response["path"]}'
+
+# Add the missing start handler
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text('Welcome to Pornrips Scraper Bot! Type /search <query> to find content.')
 
 async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = " ".join(context.args)
@@ -111,7 +114,6 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     page_url = create_telegraph_page(f"Search Results for {query}", formatted)
     await update.message.reply_text(f"Results ({len(results)} found): {page_url}")
 
-# Rest of the code remains the same
 def main() -> None:
     application = Application.builder().token('7933218460:AAFbOiu04bmACRQh43eh7VfazGesw01T0-Y').build()
     application.add_handler(CommandHandler("start", start))
