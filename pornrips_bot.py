@@ -12,9 +12,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def test(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("The bot is working!")
 
-data = requests.get(f'https://pornrips.to/?s={what}&page={page_number}').text
-print(data)  # Debugging: Print the raw HTML data
-
 telegraph = Telegraph()
 telegraph.create_account(short_name='PornripsBot')
 
