@@ -3,9 +3,10 @@ import telebot
 from html.parser import HTMLParser
 import telegraph
 import requests
+import time  # Import time module for adding delays
 
 # Your Telegram bot API token (use an environment variable or other secure method)
-API_TOKEN = '7933218460:AAFbOiu04bmACRQh43eh7VfazGesw01T0-Y'  # Replace with your actual token
+API_TOKEN = 'YOUR_API_TOKEN'  # Replace with your actual token
 bot = telebot.TeleBot(API_TOKEN)
 
 # URL of the site to scrape
@@ -103,9 +104,11 @@ def search_and_show(message):
                 telegraph_url = create_telegraph_page(article)
                 telegraph_urls.append(telegraph_url)
             
-            # Send the results in the Telegram chat
+            # Send the results with a delay to avoid flood control
             for telegraph_url in telegraph_urls:
                 bot.send_message(message.chat.id, f"Here is a search result: {telegraph_url}")
+                time.sleep(1)  # Delay of 1 second between messages to avoid flood control
+            
         else:
             bot.send_message(message.chat.id, "No results found.")
     except IndexError:
