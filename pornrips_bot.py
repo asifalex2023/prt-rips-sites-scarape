@@ -3,6 +3,8 @@ import telebot
 from html.parser import HTMLParser
 from telegraph import telegraph
 import requests
+from telegram import Bot
+from telegram.ext import Updater, CommandHandler
 
 # Your Telegram bot API token
 API_TOKEN = 'YOUR_API_TOKEN'
