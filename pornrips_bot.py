@@ -7,7 +7,7 @@ from telegram import Bot
 from telegram.ext import Updater, CommandHandler
 
 # Your Telegram bot API token
-API_TOKEN = 'YOUR_API_TOKEN'
+API_TOKEN = '7933218460:AAFbOiu04bmACRQh43eh7VfazGesw01T0-Y'
 bot = telebot.TeleBot(API_TOKEN)
 
 # URL of the site to scrape
