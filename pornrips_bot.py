@@ -3,11 +3,9 @@ import telebot
 from html.parser import HTMLParser
 import telegraph
 import requests
-from telegram import Bot
-from telegram.ext import Updater, CommandHandler
 
-# Your Telegram bot API token
-API_TOKEN = '7933218460:AAFbOiu04bmACRQh43eh7VfazGesw01T0-Y'
+# Your Telegram bot API token (use an environment variable or other secure method)
+API_TOKEN = '7933218460:AAFbOiu04bmACRQh43eh7VfazGesw01T0-Y'  # Replace with your actual token
 bot = telebot.TeleBot(API_TOKEN)
 
 # URL of the site to scrape
@@ -63,7 +61,7 @@ class pornrips(object):
         def handle_endtag(self, tag: str) -> None:
             if self.is_in_article and tag == 'article':
                 self.is_in_article = False
-                prettyPrinter(self.article_data)
+                print(self.article_data)  # Debugging output
 
     def search(self, what, cat='all'):
         search_url = f'https://pornrips.to/?s={what}'
@@ -84,23 +82,27 @@ def create_telegraph_page(data):
     page = t.create_page(title=data['name'], html_content=content)
     return page['url']
 
-
 # Handle the search command from Telegram users
 @bot.message_handler(commands=['search'])
 def search_and_show(message):
-    query = message.text.split(' ', 1)[1]
-    p = pornrips()
-    raw_data = p.search(query)
-    parser = pornrips.MyHtmlParser()
-    parser.feed(raw_data)
-    parser.close()
-    
-    # Assuming parser.article_data contains the result
-    if parser.article_data:
-        telegraph_url = create_telegraph_page(parser.article_data)
-        bot.send_message(message.chat.id, f"Here is your search result: {telegraph_url}")
-    else:
-        bot.send_message(message.chat.id, "No results found.")
+    try:
+        query = message.text.split(' ', 1)[1]
+        p = pornrips()
+        raw_data = p.search(query)
+        parser = pornrips.MyHtmlParser()
+        parser.feed(raw_data)
+        parser.close()
+        
+        # Assuming parser.article_data contains the result
+        if parser.article_data:
+            telegraph_url = create_telegraph_page(parser.article_data)
+            bot.send_message(message.chat.id, f"Here is your search result: {telegraph_url}")
+        else:
+            bot.send_message(message.chat.id, "No results found.")
+    except IndexError:
+        bot.send_message(message.chat.id, "Please provide a search query after the /search command.")
+    except Exception as e:
+        bot.send_message(message.chat.id, f"An error occurred: {str(e)}")
 
 # Start the bot
 bot.polling()
