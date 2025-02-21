@@ -20,6 +20,7 @@ class pornrips(object):
         is_in_title: bool
         is_in_size: bool
         article_data: dict
+        all_articles: list
 
         size_pattern = re.compile('(\d+ ?\w+)')
 
@@ -29,6 +30,7 @@ class pornrips(object):
             self.is_in_content = False
             self.is_in_title = False
             self.is_in_size = False
+            self.all_articles = []
 
         def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
             tag_attrs = dict(attrs)
@@ -61,7 +63,7 @@ class pornrips(object):
         def handle_endtag(self, tag: str) -> None:
             if self.is_in_article and tag == 'article':
                 self.is_in_article = False
-                print(self.article_data)  # Debugging output
+                self.all_articles.append(self.article_data)  # Collect the article data
 
     def search(self, what, cat='all'):
         search_url = f'https://pornrips.to/?s={what}'
@@ -92,11 +94,18 @@ def search_and_show(message):
         parser = pornrips.MyHtmlParser()
         parser.feed(raw_data)
         parser.close()
-        
-        # Assuming parser.article_data contains the result
-        if parser.article_data:
-            telegraph_url = create_telegraph_page(parser.article_data)
-            bot.send_message(message.chat.id, f"Here is your search result: {telegraph_url}")
+
+        # Assuming parser.all_articles contains the list of results
+        if parser.all_articles:
+            # You can either send all results as separate pages or combine them into a single page.
+            telegraph_urls = []
+            for article in parser.all_articles[:50]:  # Limit to first 50 results
+                telegraph_url = create_telegraph_page(article)
+                telegraph_urls.append(telegraph_url)
+            
+            # Send the results in the Telegram chat
+            for telegraph_url in telegraph_urls:
+                bot.send_message(message.chat.id, f"Here is a search result: {telegraph_url}")
         else:
             bot.send_message(message.chat.id, "No results found.")
     except IndexError:
