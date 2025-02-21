@@ -1,7 +1,8 @@
 import re
 import requests
+import io
 from html.parser import HTMLParser
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 from telegraph import Telegraph
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
@@ -112,12 +113,66 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         f"✅ Found {len(results)} results:\n{page_url}",
         disable_web_page_preview=True
     )
+# Existing PornripsScraper class remains unchanged...
+
+async def extract_links(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /links command to extract torrent links from Telegraph page"""
+    if not context.args:
+        await update.message.reply_text('⚠️ Please provide a Telegraph URL\nExample: /links https://telegra.ph/Results-for-250129-02-21')
+        return
+
+    telegraph_url = context.args[0]
+    
+    # Validate URL format
+    if not telegraph_url.startswith('https://telegra.ph/'):
+        await update.message.reply_text('❌ Invalid Telegraph URL format')
+        return
+
+    try:
+        # Extract page path
+        parsed = urlparse(telegraph_url)
+        path = parsed.path.strip('/')
+        
+        # Fetch page content from Telegraph API
+        api_url = f'https://api.telegra.ph/getPage/{path}?return_content=true'
+        response = requests.get(api_url)
+        data = response.json()
+        
+        if not data.get('ok'):
+            await update.message.reply_text('❌ Could not fetch Telegraph page')
+            return
+
+        # Extract all .torrent links using regex
+        content = data['result']['content']
+        html_content = ''.join([item.get('children', [''])[0] for item in content if item.get('tag') == 'p'])
+        torrent_links = re.findall(r'(https?://[^\s<>"]+\.torrent)', html_content)
+
+        if not torrent_links:
+            await update.message.reply_text('❌ No torrent links found in this page')
+            return
+
+        # Create in-memory text file
+        text_file = io.BytesIO('\n'.join(torrent_links).encode('utf-8'))
+        text_file.name = 'torrent_links.txt'
+
+        # Send file with formatted message
+        await update.message.reply_document(
+            document=text_file,
+            caption=f"🔗 Found {len(torrent_links)} torrent links:",
+            filename='torrent_links.txt'
+        )
+
+    except Exception as e:
+        await update.message.reply_text(f'⚠️ Error processing request: {str(e)}')
+
 
 def main() -> None:
     application = Application.builder().token('7933218460:AAFbOiu04bmACRQh43eh7VfazGesw01T0-Y').build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("search", search))
+    application.add_handler(CommandHandler("links", extract_links))  # New command handler
     application.run_polling()
-
+    
 if __name__ == '__main__':
     main()
+    
