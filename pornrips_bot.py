@@ -9,6 +9,10 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 class PornripsScraper:
     url = 'https://pornrips.to'
     name = 'Pornrips.to (PRT)'
+    
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
 
     class MyHtmlParser(HTMLParser):
         def __init__(self) -> None:
@@ -17,8 +21,6 @@ class PornripsScraper:
             self.current_article = {}
             self.in_article = False
             self.in_title = False
-            self.in_size = False
-            self.size_pattern = re.compile(r'Size:\s*([\d.]+ ?\w+)', re.IGNORECASE)
 
         def handle_starttag(self, tag, attrs):
             attrs = dict(attrs)
@@ -26,19 +28,17 @@ class PornripsScraper:
                 self.in_article = True
                 self.current_article = {'engine_url': PornripsScraper.url}
             
-            elif self.in_article and tag == 'h2' and 'entry-title' in attrs.get('class', ''):
+            if self.in_article and tag == 'h2' and 'entry-title' in attrs.get('class', ''):
                 self.in_title = True
-                
+
         def handle_data(self, data):
             if self.in_title:
-                # Clean and format title for URL
-                clean_title = data.strip()
-                clean_title = re.sub(r'[^\w.]+', '.', clean_title)  # Remove special chars
-                clean_title = re.sub(r'\.{2,}', '.', clean_title)  # Remove multiple dots
+                # Clean title and generate torrent URL
+                clean_title = re.sub(r'[^\w.]+', '.', data.strip())  # Remove special chars
+                clean_title = re.sub(r'\.{2,}', '.', clean_title)     # Remove multiple dots
                 self.current_article['name'] = clean_title
-                # Generate torrent URL
                 self.current_article['link'] = f"{PornripsScraper.url}/torrents/{clean_title}.torrent"
-                
+
         def handle_endtag(self, tag):
             if tag == 'article' and self.in_article:
                 self.in_article = False
@@ -51,12 +51,14 @@ class PornripsScraper:
     def search(self, query):
         all_results = []
         page = 1
+        
         while True:
             try:
                 search_url = f"{self.url}/page/{page}/?s={quote(query)}" if page > 1 \
                     else f"{self.url}/?s={quote(query)}"
                 
-                response = requests.get(search_url)
+                response = requests.get(search_url, headers=self.headers)
+                
                 if response.status_code != 200 or page > 3:
                     break
                 
@@ -70,45 +72,46 @@ class PornripsScraper:
                 page += 1
 
             except Exception as e:
-                print(f"Error: {str(e)}")
+                print(f"Scraping Error: {str(e)}")
                 break
 
         return all_results
-
-# Rest of the code remains the same (Telegraph and Telegram handlers)
 
 def create_telegraph_page(title, content):
     telegraph = Telegraph()
     telegraph.create_account(short_name='PornripsBot')
     response = telegraph.create_page(
         title=title,
-        html_content=f"<p>{content}</p>"
+        html_content=f"<pre>{content}</pre>"  # Using pre for better formatting
     )
     return f'https://telegra.ph/{response["path"]}'
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text('Welcome to Pornrips Scraper Bot! Type /search <query> to find content.')
+    await update.message.reply_text('🔍 Welcome to Pornrips Scraper Bot!\n\nSend /search <query> to find content')
 
 async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = " ".join(context.args)
     if not query:
-        await update.message.reply_text('Please provide a search term.')
+        await update.message.reply_text('⚠️ Please provide a search term\nExample: /search 25.01.19')
         return
 
     scraper = PornripsScraper()
     results = scraper.search(query)
     
     if not results:
-        await update.message.reply_text('No results found.')
+        await update.message.reply_text('❌ No results found')
         return
 
     formatted = "\n\n".join(
-        f"Title: {res['name']}\nLink: {res['link']}"
+        f"🏷 Title: {res['name']}\n🔗 Link: {res['link']}"
         for res in results
     )
     
-    page_url = create_telegraph_page(f"Search Results for {query}", formatted)
-    await update.message.reply_text(f"Results ({len(results)} found): {page_url}")
+    page_url = create_telegraph_page(f"Results for: {query}", formatted)
+    await update.message.reply_text(
+        f"✅ Found {len(results)} results:\n{page_url}",
+        disable_web_page_preview=True
+    )
 
 def main() -> None:
     application = Application.builder().token('7933218460:AAFbOiu04bmACRQh43eh7VfazGesw01T0-Y').build()
