@@ -107,7 +107,7 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text('Please provide a search term.')
 
 def main() -> None:
-    application = Application.builder().token('YOUR_TELEGRAM_BOT_TOKEN').build()
+    application = Application.builder().token('7933218460:AAFbOiu04bmACRQh43eh7VfazGesw01T0-Y').build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("search", search))
