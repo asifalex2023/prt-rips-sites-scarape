@@ -6,7 +6,7 @@ import requests
 import time  # Import time module for adding delays
 
 # Your Telegram bot API token (use an environment variable or other secure method)
-API_TOKEN = 'YOUR_API_TOKEN'  # Replace with your actual token
+API_TOKEN = '7933218460:AAFbOiu04bmACRQh43eh7VfazGesw01T0-Y'  # Replace with your actual token
 bot = telebot.TeleBot(API_TOKEN)
 
 # URL of the site to scrape
