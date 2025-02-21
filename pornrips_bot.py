@@ -115,11 +115,11 @@ def create_telegraph_page(title, content):
 # Define the /search command handler
 async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     print("Received /search command")  # Debugging line
-    query = " ".join(context.args)
+    query = " ".join(context.args)  # Get the query from the user
     if query:
         print(f"Searching for: {query}")  # Debugging line
         scraper = PornripsScraper()
-        results = scraper.search(query)
+        results = scraper.search(query)  # Pass the query to the scraper
         
         # Debugging: Check if results are collected
         print(f"Found {len(results)} results")  # Debugging line
@@ -138,6 +138,7 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             await update.message.reply_text('No results found.')
     else:
         await update.message.reply_text('Please provide a search term.')
+
 
 
 # Main function to start the bot
