@@ -98,17 +98,15 @@ def search_and_show(message):
 
         # Assuming parser.all_articles contains the list of results
         if parser.all_articles:
-            # You can either send all results as separate pages or combine them into a single page.
-            telegraph_urls = []
+            # Prepare a single message with all results
+            all_results = ""
             for article in parser.all_articles[:50]:  # Limit to first 50 results
                 telegraph_url = create_telegraph_page(article)
-                telegraph_urls.append(telegraph_url)
-            
-            # Send the results with a delay to avoid flood control
-            for telegraph_url in telegraph_urls:
-                bot.send_message(message.chat.id, f"Here is a search result: {telegraph_url}")
-                time.sleep(1)  # Delay of 1 second between messages to avoid flood control
-            
+                all_results += f"**{article['name']}**\n{article['size']}\n[Download Torrent]({telegraph_url})\n\n"
+
+            # Send all results in one message (with a newline separator)
+            bot.send_message(message.chat.id, all_results, parse_mode='Markdown')
+
         else:
             bot.send_message(message.chat.id, "No results found.")
     except IndexError:
