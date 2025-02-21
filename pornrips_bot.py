@@ -1,18 +1,13 @@
 import re
-import telebot
-from html.parser import HTMLParser
-import telegraph
 import requests
-import time  # Import time module for adding delays
+from html.parser import HTMLParser
+from telegraph import Telegraph
+from telegram import Bot
+from telegram.ext import CommandHandler, Updater
 
-# Your Telegram bot API token (use an environment variable or other secure method)
-API_TOKEN = '7933218460:AAFbOiu04bmACRQh43eh7VfazGesw01T0-Y'  # Replace with your actual token
-bot = telebot.TeleBot(API_TOKEN)
-
-# URL of the site to scrape
-url = 'https://pornrips.to'
-
-class pornrips(object):
+# Create a class for your scraper
+class PornripsScraper:
+    url = 'https://pornrips.to'
     name = 'Pornrips.to (PRT)'
 
     class MyHtmlParser(HTMLParser):
@@ -21,7 +16,6 @@ class pornrips(object):
         is_in_title: bool
         is_in_size: bool
         article_data: dict
-        all_articles: list
 
         size_pattern = re.compile('(\d+ ?\w+)')
 
@@ -31,13 +25,12 @@ class pornrips(object):
             self.is_in_content = False
             self.is_in_title = False
             self.is_in_size = False
-            self.all_articles = []
 
         def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
             tag_attrs = dict(attrs)
             if not self.is_in_article and tag == 'article' and 'post' in tag_attrs.get('class'):
                 self.is_in_article = True
-                self.article_data = { 'seeds': -1, 'leech': -1, 'desk_link': -1, 'engine_url': url }
+                self.article_data = { 'seeds': -1, 'leech': -1, 'desk_link': -1, 'engine_url': PornripsScraper.url }
                 return
             elif not self.is_in_article:
                 return
@@ -56,7 +49,7 @@ class pornrips(object):
             if self.is_in_title:
                 self.is_in_title = False
                 self.article_data['name'] = data
-                self.article_data['link'] = f"{url}/torrents/{self.article_data['name']}.torrent"
+                self.article_data['link'] = f"{PornripsScraper.url}/torrents/{self.article_data['name']}.torrent"
             elif self.is_in_size and re.search(self.size_pattern, data):
                 self.is_in_size = False
                 self.article_data['size'] = data
@@ -64,55 +57,58 @@ class pornrips(object):
         def handle_endtag(self, tag: str) -> None:
             if self.is_in_article and tag == 'article':
                 self.is_in_article = False
-                self.all_articles.append(self.article_data)  # Collect the article data
+                return self.article_data
 
-    def search(self, what, cat='all'):
-        search_url = f'https://pornrips.to/?s={what}'
-        response = requests.get(search_url)
-        return response.text
+    def search(self, what):
+        data = requests.get(f'https://pornrips.to/?s={what}').text
 
-# Initialize a telegraph page
-def create_telegraph_page(data):
-    t = telegraph.Telegraph()
-    t.create_account(short_name='PornRipsBot')
-    
-    title = f"<h3>{data['name']}</h3>"
-    link = f"<p><a href='{data['link']}'>Download Torrent</a></p>"
-    size = f"<p><b>Size:</b> {data['size']}</p>"
+        prt_parser = self.MyHtmlParser()
+        prt_parser.feed(data)
+        prt_parser.close()
+        return prt_parser.article_data
 
-    # Create a simple HTML page for Telegram
-    content = title + link + size
-    page = t.create_page(title=data['name'], html_content=content)
-    return page['url']
+# Telegraph API integration to create a page
+def create_telegraph_page(title, content):
+    telegraph = Telegraph()
+    telegraph.create_account(short_name='PornripsBot')
 
-# Handle the search command from Telegram users
-@bot.message_handler(commands=['search'])
-def search_and_show(message):
-    try:
-        query = message.text.split(' ', 1)[1]
-        p = pornrips()
-        raw_data = p.search(query)
-        parser = pornrips.MyHtmlParser()
-        parser.feed(raw_data)
-        parser.close()
+    # Create a page with scraped data
+    response = telegraph.create_page(
+        title=title,
+        html_content=f"<p>{content}</p>"
+    )
+    return f'https://telegra.ph/{response["path"]}'
 
-        # Assuming parser.all_articles contains the list of results
-        if parser.all_articles:
-            # Prepare a single message with all results
-            all_results = ""
-            for article in parser.all_articles[:50]:  # Limit to first 50 results
-                telegraph_url = create_telegraph_page(article)
-                all_results += f"**{article['name']}**\n{article['size']}\n[Download Torrent]({telegraph_url})\n\n"
+# Telegram Bot Command Handler
+def start(update, context):
+    update.message.reply_text('Welcome to Pornrips Scraper Bot! Type a search term.')
 
-            # Send all results in one message (with a newline separator)
-            bot.send_message(message.chat.id, all_results, parse_mode='Markdown')
+def search(update, context):
+    query = " ".join(context.args)
+    if query:
+        scraper = PornripsScraper()
+        result = scraper.search(query)
 
+        if result:
+            title = result['name']
+            content = f"Size: {result.get('size', 'Unknown')}\nLink: {result.get('link', 'No link available')}"
+            page_url = create_telegraph_page(title, content)
+            update.message.reply_text(f"Here is your result: {page_url}")
         else:
-            bot.send_message(message.chat.id, "No results found.")
-    except IndexError:
-        bot.send_message(message.chat.id, "Please provide a search query after the /search command.")
-    except Exception as e:
-        bot.send_message(message.chat.id, f"An error occurred: {str(e)}")
+            update.message.reply_text('No results found.')
+    else:
+        update.message.reply_text('Please provide a search term.')
 
-# Start the bot
-bot.polling()
+# Setup your Telegram Bot with the token you get from BotFather
+def main():
+    updater = Updater('7933218460:AAFbOiu04bmACRQh43eh7VfazGesw01T0-Y', use_context=True)
+    dp = updater.dispatcher
+
+    dp.add_handler(CommandHandler('start', start))
+    dp.add_handler(CommandHandler('search', search))
+
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
