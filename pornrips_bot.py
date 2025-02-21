@@ -123,17 +123,14 @@ async def extract_links(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     telegraph_url = context.args[0]
     
-    # Validate URL format
     if not telegraph_url.startswith('https://telegra.ph/'):
         await update.message.reply_text('❌ Invalid Telegraph URL format')
         return
 
     try:
-        # Extract page path
         parsed = urlparse(telegraph_url)
         path = parsed.path.strip('/')
         
-        # Fetch page content from Telegraph API
         api_url = f'https://api.telegra.ph/getPage/{path}?return_content=true'
         response = requests.get(api_url)
         data = response.json()
@@ -142,23 +139,31 @@ async def extract_links(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             await update.message.reply_text('❌ Could not fetch Telegraph page')
             return
 
-        # Extract all .torrent links using regex
-        content = data['result']['content']
-        html_content = ''.join([item.get('children', [''])[0] for item in content if item.get('tag') == 'p'])
-        torrent_links = re.findall(r'(https?://[^\s<>"]+\.torrent)', html_content)
+        # Extract all links from content
+        torrent_links = []
+        for item in data['result']['content']:
+            if item['tag'] == 'a' and item.get('attrs', {}).get('href', '').endswith('.torrent'):
+                torrent_links.append(item['attrs']['href'])
+            elif item['tag'] == 'p':
+                for child in item.get('children', []):
+                    if isinstance(child, dict) and child.get('tag') == 'a':
+                        href = child.get('attrs', {}).get('href', '')
+                        if href.endswith('.torrent'):
+                            torrent_links.append(href)
 
         if not torrent_links:
             await update.message.reply_text('❌ No torrent links found in this page')
             return
 
-        # Create in-memory text file
-        text_file = io.BytesIO('\n'.join(torrent_links).encode('utf-8'))
-        text_file.name = 'torrent_links.txt'
+        # Create text file with proper encoding
+        text_content = '\n'.join(torrent_links)
+        bio = io.BytesIO(text_content.encode('utf-8'))
+        bio.seek(0)
+        bio.name = 'torrent_links.txt'
 
-        # Send file with formatted message
         await update.message.reply_document(
-            document=text_file,
-            caption=f"🔗 Found {len(torrent_links)} torrent links:",
+            document=bio,
+            caption=f"✅ Found {len(torrent_links)} torrent links:",
             filename='torrent_links.txt'
         )
 
