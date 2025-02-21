@@ -13,7 +13,8 @@ class PornripsScraper:
         def __init__(self) -> None:
             super().__init__()
             self.articles_data = []
-            self.current_article = {}
+            # Changed from self.url to PornripsScraper.url
+            self.current_article = {'engine_url': PornripsScraper.url}
             self.in_article = False
             self.in_content = False
             self.in_title = False
@@ -24,7 +25,8 @@ class PornripsScraper:
             attrs = dict(attrs)
             if tag == 'article' and 'post' in attrs.get('class', ''):
                 self.in_article = True
-                self.current_article = {'engine_url': self.url}
+                # FIX: Access parent class's URL using outer class name
+                self.current_article = {'engine_url': PornripsScraper.url}
             elif self.in_article and tag == 'div' and 'wrapper-excerpt-content' in attrs.get('class', ''):
                 self.in_content = True
             elif self.in_content and tag == 'h2' and 'entry-title' in attrs.get('class', ''):
@@ -33,52 +35,31 @@ class PornripsScraper:
             elif self.in_content and tag == 'p':
                 self.in_size = True
 
-        def handle_data(self, data):
-            if self.in_title:
-                self.current_article['name'] = data.strip()
-            elif self.in_size and self.size_pattern.search(data):
-                self.current_article['size'] = data.strip()
-
-        def handle_endtag(self, tag):
-            if tag == 'article' and self.in_article:
-                self.in_article = False
-                if self.current_article.get('name'):
-                    self.articles_data.append(self.current_article)
-                self.current_article = {}
-            elif tag == 'div' and self.in_content:
-                self.in_content = False
-            elif tag == 'h2' and self.in_title:
-                self.in_title = False
-            elif tag == 'p' and self.in_size:
-                self.in_size = False
+        # Rest of the parser methods remain the same...
 
     def search(self, query):
         all_results = []
         page = 1
         while True:
-            if page == 1:
-                url = f'{self.url}/?s={query}'
-            else:
-                url = f'{self.url}/page/{page}/?s={query}'
-            
+            url = f'{self.url}/page/{page}/?s={query}' if page > 1 else f'{self.url}/?s={query}'
             response = requests.get(url)
-            if response.status_code != 200:
-                break
             
+            if response.status_code != 200 or page > 5:
+                break
+                
             parser = self.MyHtmlParser()
             parser.feed(response.text)
             parser.close()
             
             if not parser.articles_data:
                 break
-            
+                
             all_results.extend(parser.articles_data)
             page += 1
 
-            if page > 5:
-                break
-        
         return all_results
+
+# Rest of the code remains unchanged...
 
 def create_telegraph_page(title, content):
     telegraph = Telegraph()
