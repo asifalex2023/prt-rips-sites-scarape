@@ -5,9 +5,13 @@ from telegraph import Telegraph  # Correctly import Telegraph
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-# Define the /start command handler
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    print("Received /start command")  # Debugging line
     await update.message.reply_text('Welcome to the Pornrips Scraper Bot! Type a search term using /search.')
+
+async def test(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text("The bot is working!")
+    
 
 
 # Create a class for your scraper
@@ -99,13 +103,14 @@ def create_telegraph_page(title, content):
 
 # Define the /search command handler
 async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    print("Received /search command")  # Debugging line
     query = " ".join(context.args)
     if query:
         scraper = PornripsScraper()
         results = scraper.search(query)
 
         if results:
-            # Format all the results as a string
+            print(f"Found {len(results)} results")  # Debugging line
             formatted_results = ""
             for result in results:
                 formatted_results += f"Title: {result['name']}\nSize: {result.get('size', 'Unknown')}\nLink: {result.get('link', 'No link available')}\n\n"
@@ -125,7 +130,8 @@ def main() -> None:
     # Add command handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("search", search))
-
+    application.add_handler(CommandHandler("test", test))
+    
     # Run the bot
     application.run_polling()
 
