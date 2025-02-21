@@ -11,7 +11,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def test(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("The bot is working!")
-    
+
+data = requests.get(f'https://pornrips.to/?s={what}&page={page_number}').text
+print(data)  # Debugging: Print the raw HTML data
+
 telegraph = Telegraph()
 telegraph.create_account(short_name='PornripsBot')
 
@@ -117,8 +120,12 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         print(f"Searching for: {query}")  # Debugging line
         scraper = PornripsScraper()
         results = scraper.search(query)
+        
+        # Debugging: Check if results are collected
         print(f"Found {len(results)} results")  # Debugging line
-
+        for result in results:  # Debugging loop to inspect results
+            print(f"Result - Name: {result['name']}, Size: {result.get('size')}, Link: {result.get('link')}")
+        
         if results:
             formatted_results = ""
             for result in results:
@@ -131,6 +138,7 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             await update.message.reply_text('No results found.')
     else:
         await update.message.reply_text('Please provide a search term.')
+
 
 # Main function to start the bot
 def main() -> None:
