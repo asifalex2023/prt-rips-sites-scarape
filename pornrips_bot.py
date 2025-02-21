@@ -16,6 +16,7 @@ class PornripsScraper:
         is_in_title: bool
         is_in_size: bool
         articles_data: list
+
         size_pattern = re.compile('(\d+ ?\w+)')
 
         def __init__(self) -> None:
@@ -24,7 +25,7 @@ class PornripsScraper:
             self.is_in_content = False
             self.is_in_title = False
             self.is_in_size = False
-            self.articles_data = []  # List to store all articles
+            self.articles_data = []  # Initialize an empty list to hold all articles
 
         def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
             tag_attrs = dict(attrs)
@@ -57,26 +58,16 @@ class PornripsScraper:
         def handle_endtag(self, tag: str) -> None:
             if self.is_in_article and tag == 'article':
                 self.is_in_article = False
-                self.articles_data.append(self.article_data)  # Append article to the list
+                self.articles_data.append(self.article_data)  # Append each article to the list
 
     def search(self, what):
-        page_number = 1
-        all_articles = []
-        while True:
-            data = requests.get(f'https://pornrips.to/?s={what}&page={page_number}').text
-            prt_parser = self.MyHtmlParser()
-            prt_parser.feed(data)
-            prt_parser.close()
+        data = requests.get(f'https://pornrips.to/?s={what}').text
 
-            all_articles.extend(prt_parser.articles_data)  # Add current page's results to the list
+        prt_parser = self.MyHtmlParser()
+        prt_parser.feed(data)
+        prt_parser.close()
 
-            # Check if there's a "Next" page
-            if 'Next' in data:  # Looking for 'Next' in page source to detect pagination
-                page_number += 1
-            else:
-                break  # No more pages, stop the loop
-
-        return all_articles  # Return all scraped articles
+        return prt_parser.articles_data  # Return the list of all articles
 
 
 # Telegraph API integration to create a page
@@ -113,7 +104,7 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             await update.message.reply_text('No results found.')
     else:
         await update.message.reply_text('Please provide a search term.')
-        
+
 
 def main() -> None:
     application = Application.builder().token('7933218460:AAFbOiu04bmACRQh43eh7VfazGesw01T0-Y').build()
