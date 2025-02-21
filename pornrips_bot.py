@@ -15,7 +15,7 @@ class PornripsScraper:
         is_in_content: bool
         is_in_title: bool
         is_in_size: bool
-        article_data: dict
+        articles_data: list
 
         size_pattern = re.compile('(\d+ ?\w+)')
 
@@ -25,6 +25,7 @@ class PornripsScraper:
             self.is_in_content = False
             self.is_in_title = False
             self.is_in_size = False
+            self.articles_data = []  # Initialize an empty list to hold all articles
 
         def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
             tag_attrs = dict(attrs)
@@ -57,7 +58,7 @@ class PornripsScraper:
         def handle_endtag(self, tag: str) -> None:
             if self.is_in_article and tag == 'article':
                 self.is_in_article = False
-                return self.article_data
+                self.articles_data.append(self.article_data)  # Append each article to the list
 
     def search(self, what):
         data = requests.get(f'https://pornrips.to/?s={what}').text
@@ -65,7 +66,9 @@ class PornripsScraper:
         prt_parser = self.MyHtmlParser()
         prt_parser.feed(data)
         prt_parser.close()
-        return prt_parser.article_data
+
+        return prt_parser.articles_data  # Return the list of all articles
+
 
 # Telegraph API integration to create a page
 def create_telegraph_page(title, content):
