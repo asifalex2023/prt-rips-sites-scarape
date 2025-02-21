@@ -5,6 +5,11 @@ from telegraph import Telegraph  # Correctly import Telegraph
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
+# Define the /start command handler
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text('Welcome to the Pornrips Scraper Bot! Type a search term using /search.')
+
+
 # Create a class for your scraper
 class PornripsScraper:
     url = 'https://pornrips.to'
@@ -92,7 +97,7 @@ def create_telegraph_page(title, content):
     )
     return f'https://telegra.ph/{response["path"]}'
 
-# Telegram Bot Command Handler
+# Define the /search command handler
 async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = " ".join(context.args)
     if query:
@@ -112,12 +117,16 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     else:
         await update.message.reply_text('Please provide a search term.')
 
+# Main function to start the bot
 def main() -> None:
+    # Replace with your actual Telegram bot token
     application = Application.builder().token('7933218460:AAFbOiu04bmACRQh43eh7VfazGesw01T0-Y').build()
 
+    # Add command handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("search", search))
 
+    # Run the bot
     application.run_polling()
 
 if __name__ == '__main__':
