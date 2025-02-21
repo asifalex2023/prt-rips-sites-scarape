@@ -1,10 +1,9 @@
 import re
 import requests
 from html.parser import HTMLParser
+from telegraph import Telegraph  # Correctly import Telegraph
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
-from telegram.ext import CommandHandler
-from telegram.ext import Application
 
 # Create a class for your scraper
 class PornripsScraper:
@@ -70,7 +69,7 @@ class PornripsScraper:
 
 # Telegraph API integration to create a page
 def create_telegraph_page(title, content):
-    telegraph = Telegraph()
+    telegraph = Telegraph()  # Ensure Telegraph is initialized
     telegraph.create_account(short_name='PornripsBot')
 
     # Create a page with scraped data
@@ -81,12 +80,6 @@ def create_telegraph_page(title, content):
     return f'https://telegra.ph/{response["path"]}'
 
 # Telegram Bot Command Handler
-
-
-# Start command handler
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text('Welcome to Pornrips Scraper Bot! Type a search term.')
 
