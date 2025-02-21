@@ -17,3 +17,9 @@ A Telegram bot for searching and managing torrent links from Pornrips.to
 ```bash
 git clone https://github.com/yourusername/pornrips-bot.git
 cd pornrips-bot
+
+### Install Dependencies
+sudo apt update && sudo apt install python3-pip -y
+pip3 install -r requirements.txt
+
+
