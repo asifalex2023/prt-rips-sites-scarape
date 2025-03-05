@@ -1,6 +1,6 @@
-# 🚀 Pornrips.to Telegram Bot
+# 🔞 PRT Telegram Bot 🚀
 
-A feature-rich Telegram bot for searching and managing torrent links from Pornrips.to
+A feature-rich Telegram bot for searching and managing torrent links from Pornrips
 
 [![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
